@@ -17,6 +17,7 @@ Run:  python3 site/build.py
 from __future__ import annotations
 
 import html
+import hashlib
 import re
 import shutil
 import pathlib
@@ -577,6 +578,41 @@ def layout_html(lines: list[tuple[int, str, int]]) -> str:
     return "\n".join(out)
 
 
+def publish_assets() -> tuple[str, str]:
+    """
+    Content-hash the stylesheet and the font, then point every page at the
+    hashed names.
+
+    An unhashed `style.css` cached with max-age cannot be updated: browsers keep
+    the old rules for the whole TTL, and HTML that references new classes then
+    renders unstyled. A new hash per build makes the cache immutable and safe.
+    """
+    fonts_out = OUT / "assets" / "fonts"
+    fonts_out.mkdir(parents=True, exist_ok=True)
+
+    font = HERE / "assets" / "fonts" / "fandol-fang-latin.woff2"
+    font_hash = hashlib.sha256(font.read_bytes()).hexdigest()[:10]
+    font_name = f"fandol-fang-latin.{font_hash}.woff2"
+    shutil.copyfile(font, fonts_out / font_name)
+    for extra in ("COPYING", "README.md"):
+        src = HERE / "assets" / "fonts" / extra
+        if src.exists():
+            shutil.copyfile(src, fonts_out / extra)
+
+    css = (HERE / "assets" / "style.css").read_text(encoding="utf-8")
+    css = css.replace("fandol-fang-latin.woff2", font_name)
+    css_hash = hashlib.sha256(css.encode()).hexdigest()[:10]
+    css_name = f"style.{css_hash}.css"
+    (OUT / "assets" / css_name).write_text(css, encoding="utf-8")
+
+    for page in OUT.glob("*.html"):
+        text = page.read_text(encoding="utf-8")
+        text = text.replace("assets/style.css", f"assets/{css_name}")
+        text = text.replace("assets/fonts/fandol-fang-latin.woff2", f"assets/fonts/{font_name}")
+        page.write_text(text, encoding="utf-8")
+    return css_name, font_name
+
+
 # ---------------------------------------------------------------- main
 
 def main() -> int:
@@ -587,17 +623,11 @@ def main() -> int:
     if OUT.exists():
         shutil.rmtree(OUT)
     (OUT / "assets").mkdir(parents=True)
-    shutil.copyfile(CSS, OUT / "assets" / "style.css")
-    fonts = HERE / "assets" / "fonts"
-    if fonts.is_dir():
-        shutil.copytree(fonts, OUT / "assets" / "fonts")
 
-    # Pages serves everything with max-age=0 by default; the font never changes.
-    # Keep these two patterns disjoint: Pages concatenates every rule that
-    # matches, and an overlapping pair produced two Cache-Control directives.
+    # Pages serves everything with max-age=0 by default. Both assets are
+    # content-hashed below, so they can be cached forever.
     (OUT / "_headers").write_text(
-        "/assets/fonts/*\n  Cache-Control: public, max-age=31536000, immutable\n"
-        "/assets/style.css\n  Cache-Control: public, max-age=3600\n",
+        "/assets/*\n  Cache-Control: public, max-age=31536000, immutable\n",
         encoding="utf-8")
     # the archive is copied byte-for-byte to /1996/
     shutil.copytree(ROOT / "krazykat", OUT / "1996")
@@ -698,6 +728,9 @@ def main() -> int:
     write_specimen(specimen or "girl in red lapel leather<br>and sweet sickly smell")
     write_sans_specimen(specimen or "girl in red lapel leather<br>and sweet sickly smell")
     write_fang_specimen(specimen or "girl in red lapel leather<br>and sweet sickly smell")
+
+    css_name, font_name = publish_assets()
+    print(f"assets: {css_name} + {font_name}\n")
 
     print(f"{'page':22} {'words':>6}")
     total = 0

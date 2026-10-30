@@ -66,9 +66,12 @@ npx wrangler pages deploy dist --project-name kkpoetry --branch main
 /images/*   /1996/images/:splat   301
 ```
 
-`dist/_headers` caches the webfont for a year (`immutable`) and the stylesheet
-for an hour. Keep the two patterns disjoint — Pages concatenates every matching
-rule, and an overlapping pair yields a malformed double `Cache-Control`.
+`dist/_headers` caches everything under `/assets/` for a year as `immutable`.
+That is only safe because `build.py` **content-hashes both filenames**
+(`style.9274b85639.css`, `fandol-fang-latin.22b14a0123.woff2`) and rewrites every
+page to point at them. An unhashed `style.css` with a 3600s TTL cost an hour of
+stale CSS once: the HTML referenced new classes that the cached stylesheet did
+not define, so the layout silently rendered unstyled.
 
 ## Typography
 
