@@ -1,3 +1,6 @@
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# wrangler pages deploy scratch
+.wrangler/

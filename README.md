@@ -23,6 +23,23 @@ python3 -m http.server --directory krazykat 8000
 Opening `index.html` from the filesystem works too, though `file://` breaks
 nothing here it just looks the same.
 
+## Deploying
+
+Live at <https://kkpoetry.pages.dev> (Cloudflare Pages, project `kkpoetry`,
+account `63de8da2e66257db5bc2d26927883a42`).
+
+This is a **direct-upload** Pages project, not a git-connected one — the
+Cloudflare GitHub App is not installed on the account, so pushing does not
+deploy. To publish changes:
+
+```sh
+npx wrangler pages deploy krazykat --project-name kkpoetry --branch main
+```
+
+Pages strips `.html` from URLs: `/writing/scrawlz.html` answers `308` to
+`/writing/scrawlz`. Relative links in the HTML are unaffected, but any new
+absolute internal link should omit the extension or expect one redirect.
+
 ## Notes
 
 - All HTML is pure ASCII, so no charset declaration is needed anywhere.
