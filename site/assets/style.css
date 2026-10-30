@@ -111,14 +111,19 @@
   @media (min-width: 60rem) {
     .shell {
       grid-template-columns: var(--nav) minmax(0, var(--measure));
-      justify-content: center;
+      justify-content: start;      /* range left, not centred */
     }
+  }
+
+  /* Sticky only when the whole 26-item list fits the viewport. Deliberately no
+     inner scroll container: a wheel over the list must scroll the page, not a
+     nested box (max-height + overflow + overscroll-behavior: contain swallowed
+     every wheel event). */
+  @media (min-width: 60rem) and (min-height: 62rem) {
     .works {
       position: sticky;
       top: 1rem;
-      max-height: calc(100dvh - 2rem);
-      overflow: auto;
-      overscroll-behavior: contain;
+      align-self: start;
     }
   }
 

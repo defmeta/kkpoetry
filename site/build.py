@@ -93,6 +93,41 @@ def fix_ampersands(fragment: str) -> str:
     return "".join(out)
 
 
+def balance_emphasis(fragment: str) -> str:
+    """
+    Repair emphasis the 1996 source left open.
+
+    Four pages contain a lost slash -- `<B>communicate<B>` instead of `<B>...
+    </B>` -- which in a real browser leaves bold running to the end of the
+    paragraph. Treat a second open of an already-open tag as the intended
+    close, drop stray closes, and close anything still open at the end.
+    """
+    out: list[str] = []
+    open_tags: list[str] = []
+    for part in re.split(r"(<[^>]+>)", fragment):
+        m = re.match(r"</?(strong|em)\b", part, re.I)
+        if not m:
+            out.append(part)
+            continue
+        name = m.group(1).lower()
+        if part.startswith("</"):
+            if name in open_tags:
+                open_tags.remove(name)
+                out.append(f"</{name}>")
+        elif name in open_tags:
+            # The 1996 typo: `<B>communicate<B>` lost a slash. A second open of
+            # an already-open tag is the intended close -- emitting it here keeps
+            # the nesting correct instead of pushing a close past the </A>.
+            open_tags.remove(name)
+            out.append(f"</{name}>")
+        else:
+            open_tags.append(name)
+            out.append(f"<{name}>")
+    for name in reversed(open_tags):
+        out.append(f"</{name}>")
+    return "".join(out)
+
+
 def split_boilerplate(content: str) -> tuple[str, str]:
     """
     Cut the trailing <HR> + copyright line that ends every page.
@@ -162,8 +197,11 @@ def to_blocks(content: str) -> tuple[str, object, str]:
     s = re.sub(r"(?i)<i\b[^>]*>", "<em>", s)
     s = re.sub(r"(?i)</i\s*>", "</em>", s)
 
-    # Anything else is presentation-only.
-    s = re.sub(r"<(?!/?(?:strong|em|a)\b)[^>]*>", "", s)
+    # Anything else is presentation-only. NOTE the (?i): every tag in this 1996
+    # archive is uppercase (<A HREF=...>, <B>), and a case-sensitive keep-list
+    # silently deleted all 91 anchors - the words survived, so the word-assert
+    # could not see it.
+    s = re.sub(r"(?i)<(?!/?(?:strong|em|a)\b)[^>]*>", "", s)
     s = fix_ampersands(s)
     s = re.sub(r"[ \t\r\n]+", " ", s).strip()
 
@@ -171,7 +209,7 @@ def to_blocks(content: str) -> tuple[str, object, str]:
     for block in s.split("\x01"):
         lines = [line.strip() for line in block.split("\x00") if line.strip()]
         if lines:
-            stanzas.append("<br>".join(lines))
+            stanzas.append(balance_emphasis("<br>".join(lines)))
 
     # Hard check, inside the converter: not one word may be lost.
     assert words("\n".join(stanzas)) == words(poem), "verse lost words in conversion"
@@ -530,7 +568,7 @@ def menu_layout(region: str) -> list[tuple[int, str, int]] | None:
                 text += f"</{tag}>"
             for tag in open_inline:
                 text = f"<{tag}>" + text
-            lines.append((depth, fix_ampersands(text), brs))
+            lines.append((depth, balance_emphasis(fix_ampersands(text)), brs))
             brs = 0
 
     for tok in tokens:
