@@ -199,6 +199,7 @@ def shell(*, doc_title: str, h1: str, body: str, active: str,
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#000040">
   <link rel="icon" href="{FAVICON}">
+  <link rel="preload" href="assets/fonts/fandol-fang-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
@@ -326,7 +327,8 @@ def write_specimen(stanza: str) -> None:
   <main class="spec">
 {chr(10).join(blocks)}
   </main>
-  <p class="note">Next: <a href="sans">the seven sans options for the chrome &rarr;</a></p>
+  <p class="note">Next: <a href="sans">the seven sans options for the chrome &rarr;</a>
+  &middot; <a href="fang">system fangsong vs the self-hosted subset &rarr;</a></p>
   <p class="note">Rendered by your browser, so this is the real answer for your
   machine. Stack under test: <code>--fang</code> = 
   <code>\"FangSong\", \"仿宋\", \"STFangsong\", \"FandolFang\", fangsong, serif</code>.
@@ -445,6 +447,62 @@ def write_sans_specimen(stanza: str) -> None:
 """, encoding="utf-8")
 
 
+def write_fang_specimen(stanza: str) -> None:
+    """System fangsong vs the self-hosted Fandol subset, so the swap is visible."""
+    pangram = ("The quick brown fox &mdash; jumps &lsquo;over&rsquo; &ldquo;lazy&rdquo; "
+               "dogs 1,234.5 + 6% [x]")
+    (OUT / "fang.html").write_text(f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fangsong comparison &mdash; {SITE}</title>
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="{FAVICON}">
+  <link rel="stylesheet" href="assets/style.css">
+  <style>
+    .cmp {{ margin: 0; padding: var(--pad); border-bottom: 1px solid var(--rule); }}
+    .cmp .lbl {{ margin: 0 0 1rem; font: 400 .75rem/1.5 var(--ui); letter-spacing: .06em;
+                 text-transform: uppercase; opacity: .75; }}
+    .cmp .lbl b {{ color: inherit; }}
+    .cmp .v {{ margin: 0 0 1rem; font-size: 1.15rem; line-height: 1.8; }}
+    .cmp .pg {{ margin: 0; font-size: .8rem; opacity: .7; }}
+    .sys .v {{ font-family: var(--fang-sys); }}
+    .web .v {{ font-family: "Fandol Fang", var(--fang-sys); }}
+    .web {{ background: color-mix(in oklab, var(--accent) 8%, transparent); }}
+  </style>
+</head>
+<body>
+  <header class="band">
+    <p class="site"><a href="./">{SITE}</a></p>
+    <p class="tag"><a href="type">&larr; verse</a> &middot; <a href="sans">sans</a></p>
+  </header>
+
+  <section class="cmp sys">
+    <p class="lbl">A &mdash; system fangsong: SimFang on Windows, STFangsong on macOS,
+    <b>nothing at all</b> on Linux and Android</p>
+    <p class="v">{stanza}</p>
+    <p class="v pg">{pangram}</p>
+  </section>
+
+  <section class="cmp web">
+    <p class="lbl">B &mdash; Fandol Fang, self-hosted subset (9.7 KB) &mdash; the same file everywhere</p>
+    <p class="v">{stanza}</p>
+    <p class="v pg">{pangram}</p>
+  </section>
+
+  <p class="legend" style="padding: var(--pad); max-width: 72rem; margin-inline: auto; font: 400 .85rem/1.6 var(--ui); opacity: .8">
+  Both sections are the same words. On Windows the two differ: SimFang's Latin is
+  a lighter, slightly angled face; Fandol's is a Times-proportioned serif with
+  real kerning. Shipping B is what makes Linux and Android see fangsong at all
+  &mdash; the cost is that Windows stops seeing SimFang. If you prefer A on
+  Windows, swap <code>--fang</code> to <code>var(--fang-sys), "Fandol Fang"</code>
+  and every platform keeps its local face, at the price of platform drift.</p>
+</body>
+</html>
+""", encoding="utf-8")
+
+
 # ---------------------------------------------------------------- main
 
 def main() -> int:
@@ -456,6 +514,17 @@ def main() -> int:
         shutil.rmtree(OUT)
     (OUT / "assets").mkdir(parents=True)
     shutil.copyfile(CSS, OUT / "assets" / "style.css")
+    fonts = HERE / "assets" / "fonts"
+    if fonts.is_dir():
+        shutil.copytree(fonts, OUT / "assets" / "fonts")
+
+    # Pages serves everything with max-age=0 by default; the font never changes.
+    # Keep these two patterns disjoint: Pages concatenates every rule that
+    # matches, and an overlapping pair produced two Cache-Control directives.
+    (OUT / "_headers").write_text(
+        "/assets/fonts/*\n  Cache-Control: public, max-age=31536000, immutable\n"
+        "/assets/style.css\n  Cache-Control: public, max-age=3600\n",
+        encoding="utf-8")
     # the archive is copied byte-for-byte to /1996/
     shutil.copytree(ROOT / "krazykat", OUT / "1996")
 
@@ -549,6 +618,7 @@ def main() -> int:
 
     write_specimen(specimen or "girl in red lapel leather<br>and sweet sickly smell")
     write_sans_specimen(specimen or "girl in red lapel leather<br>and sweet sickly smell")
+    write_fang_specimen(specimen or "girl in red lapel leather<br>and sweet sickly smell")
 
     print(f"{'page':22} {'words':>6}")
     total = 0

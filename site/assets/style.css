@@ -1,6 +1,18 @@
 /* 2026 layout for the 1996 krazykat poetry site.
-   No build step, no JavaScript, no webfonts, no network requests.
+   No build step, no JavaScript, no network requests beyond one 10 KB webfont.
    Palette is the original's: navy #000040, paper #fff, lime #ccff00. */
+
+/* Self-hosted fangsong, subset to Latin + punctuation so Linux and Android see
+   the same verse as Windows and macOS. Source: FandolFang-Regular.otf from
+   CTAN, (c) the Fandol team, GPL + font exception. See assets/fonts/COPYING. */
+@font-face {
+  font-family: "Fandol Fang";
+  src: url("fonts/fandol-fang-latin.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0020-007E, U+00A1-00FF, U+2010-2027, U+2030-205E, U+20AC;
+}
 
 @layer base, layout, components, print;
 
@@ -28,11 +40,11 @@
        column is 18rem and the two-column layout waits until 60rem. */
     --nav:   18rem;
 
-    /* Decision: fangsong verse, sans chrome. simfang.ttf is present on Windows
-       and STFangsong on macOS; Linux and Android have neither and fall through
-       to a serif. Self-hosting a subset is still an open item. */
-    --fang:  "FangSong", "仿宋", "STFangsong", "FandolFang", fangsong, serif;
-    --verse: var(--fang);
+    /* Verse: the self-hosted subset first, so every platform agrees, then the
+       system fangsong for anything the subset lacks, then a serif. */
+    --fang-sys: "FangSong", "仿宋", "STFangsong", fangsong, serif;
+    --fang:     "Fandol Fang", var(--fang-sys);
+    --verse:    var(--fang);
   }
 
   * { box-sizing: border-box; }

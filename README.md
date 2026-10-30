@@ -36,6 +36,7 @@ Two specimen pages exist for typography decisions and are disposable:
 
 - `/type` — fangsong vs serif verse
 - `/sans` — seven chrome options
+- `/fang` — system fangsong vs the self-hosted subset
 
 ## Deploying
 
@@ -54,18 +55,29 @@ npx wrangler pages deploy dist --project-name kkpoetry --branch main
 /images/*   /1996/images/:splat   301
 ```
 
+`dist/_headers` caches the webfont for a year (`immutable`) and the stylesheet
+for an hour. Keep the two patterns disjoint — Pages concatenates every matching
+rule, and an overlapping pair yields a malformed double `Cache-Control`.
+
 ## Typography
 
 | | |
 |---|---|
-| verse | `FangSong`, `仿宋`, `STFangsong`, `FandolFang`, `fangsong`, serif |
+| verse | `"Fandol Fang"` (self-hosted) → `FangSong`, `仿宋`, `STFangsong`, `fangsong` → serif |
 | chrome | `ui-monospace` → Cascadia Mono / SF Mono / Menlo / Consolas |
 | concrete poems | kept in monospace — indentation is the poem |
 
-Fangsong exists on Windows (`simfang.ttf`) and macOS (`STFangsong`); Linux and
-Android have none and fall through to a serif. **Open item:** self-host a
-subset (FandolFang's Latin, GPL + font exception) so every platform agrees.
-`simfang.ttf` itself is Microsoft-licensed and cannot be redistributed.
+Fangsong only exists on Windows (`simfang.ttf`) and macOS (`STFangsong`); Linux
+and Android ship none, so a system-only stack silently fell back to a serif for
+a large share of readers. `assets/fonts/fandol-fang-latin.woff2` fixes that: a
+**9.7 KB** Latin-and-punctuation subset of FandolFang (CTAN, © the Fandol team,
+GPL + font exception — see `assets/fonts/COPYING` and the build recipe in
+`assets/fonts/README.md`). It carries all 70 characters the poems actually use.
+
+Consequence worth knowing: the subset now wins on Windows too, so Windows stops
+rendering SimFang and renders Fandol's Latin instead. To keep each platform's
+local face instead, reorder one line — `--fang: var(--fang-sys), "Fandol Fang"`
+— at the cost of platform drift. `/fang` shows both side by side.
 
 ## Archive notes
 
