@@ -1,0 +1,4 @@
+# These files are 1995-96 originals with CR-only (classic Mac) line endings.
+# Store them byte-for-byte; no EOL normalization, no "every file is one huge
+# line" diffs.
+* -text
