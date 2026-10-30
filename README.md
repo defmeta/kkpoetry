@@ -1,51 +1,81 @@
 # kkpoetry
 
-Archive of the *krazykat* poetry site, written 1995–96. Static HTML, no build
-step, no server-side code — it runs on any web server as-is.
+Poetry written 1995–96 by Noah Christy Brown, published as two things at once:
 
-- `krazykat/index.html` — entry point; immediately redirects to
-  `writing/scrawlz.html`
-- `krazykat/writing/` — poems. Most are a trio: `<poem>.html` (frame
-  contents), `<poem>.t.html` (title pane), `<poem>.b.html` (body pane)
-- `krazykat/images/` — three GIFs
+- **`/`** — the same poems in 2026 markup: semantic landmarks instead of a
+  frameset, fangsong verse, monospace chrome, fluid layout, no JavaScript and
+  no webfonts.
+- **`/1996/`** — the original site, byte-for-byte as it was, frameworks and all.
 
-The layout is a nested `<FRAMESET>` with `TARGET="body"` links from the
-contents pane. Everything is original 1996 HTML; it is intentionally not
-modernised.
+Live at <https://kkpoetry.pages.dev>.
 
-## Viewing it locally
+## Layout
 
-```sh
-python3 -m http.server --directory krazykat 8000
-# then open http://localhost:8000/
+```
+krazykat/          the 1996 archive: 93 HTML pages + 3 GIFs, never modified
+site/build.py      generator: reads krazykat/, writes dist/
+site/assets/       the stylesheet
+site/serve.py      local server that mimics Cloudflare Pages' URL handling
+dist/              build output = the deploy target (gitignored)
 ```
 
-Opening `index.html` from the filesystem works too, though `file://` breaks
-nothing here it just looks the same.
+## Build and preview
+
+```sh
+python3 site/build.py     # krazykat/ -> dist/, archive copied to dist/1996/
+python3 site/serve.py     # http://localhost:8000
+```
+
+`serve.py` reproduces Pages' behaviour so local matches production: `/placing`
+serves `placing.html`, and `/placing.html` 308s back to `/placing`.
+
+Every poem is asserted at build time to be **word-for-word** the original. The
+build fails rather than silently dropping text.
+
+Two specimen pages exist for typography decisions and are disposable:
+
+- `/type` — fangsong vs serif verse
+- `/sans` — seven chrome options
 
 ## Deploying
 
-Live at <https://kkpoetry.pages.dev> (Cloudflare Pages, project `kkpoetry`,
-account `63de8da2e66257db5bc2d26927883a42`).
-
-This is a **direct-upload** Pages project, not a git-connected one — the
+Cloudflare Pages, project `kkpoetry`, direct upload (not git-connected — the
 Cloudflare GitHub App is not installed on the account, so pushing does not
-deploy. To publish changes:
+deploy):
 
 ```sh
-npx wrangler pages deploy krazykat --project-name kkpoetry --branch main
+npx wrangler pages deploy dist --project-name kkpoetry --branch main
 ```
 
-Pages strips `.html` from URLs: `/writing/scrawlz.html` answers `308` to
-`/writing/scrawlz`. Relative links in the HTML are unaffected, but any new
-absolute internal link should omit the extension or expect one redirect.
+`dist/_redirects` forwards the old root-level 1996 URLs to the archive:
 
-## Notes
+```
+/writing/*  /1996/writing/:splat  301
+/images/*   /1996/images/:splat   301
+```
 
-- All HTML is pure ASCII, so no charset declaration is needed anywhere.
-- Line endings are CR-only (classic Mac). `.gitattributes` sets `* -text` so
-  git stores the bytes untouched — do not let an editor "fix" them.
-- Every internal link resolves, and all filenames are lowercase, so the tree is
-  safe on case-sensitive hosts.
+## Typography
+
+| | |
+|---|---|
+| verse | `FangSong`, `仿宋`, `STFangsong`, `FandolFang`, `fangsong`, serif |
+| chrome | `ui-monospace` → Cascadia Mono / SF Mono / Menlo / Consolas |
+| concrete poems | kept in monospace — indentation is the poem |
+
+Fangsong exists on Windows (`simfang.ttf`) and macOS (`STFangsong`); Linux and
+Android have none and fall through to a serif. **Open item:** self-host a
+subset (FandolFang's Latin, GPL + font exception) so every platform agrees.
+`simfang.ttf` itself is Microsoft-licensed and cannot be redistributed.
+
+## Archive notes
+
+- All HTML is pure ASCII, so no charset declaration is needed.
+- Line endings are CR-only (classic Mac). `krazykat/` is stored byte-for-byte
+  and must stay that way — do not let an editor "fix" it.
+- Three `mailto:` links now point at `deafmetal@gmail.com`; the 1996 address and
+  a dead link to `mindvox.phantom.com/~reive/poetry.html` were removed in 2026.
+- Two poems contain literal angle-bracket words — `<jerks>` in *Timidity*, `<EOF>`
+  in *Until 2*. 1996 browsers ate them as unknown tags, so the words were
+  invisible for thirty years. The 2026 pages escape them and show them.
 
 © Noah Christy Brown, 1995–1996.
