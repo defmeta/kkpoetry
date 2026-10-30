@@ -31,10 +31,16 @@ CSS = HERE / "assets" / "style.css"
 SITE = "Splayed fingers, hidden rings."
 CONTACT = "mailto:deafmetal@gmail.com"
 
+# "kk" in the site's own colours: two stroked k's on navy, drawn as paths rather
+# than <text> so it does not depend on which font a browser picks. 32-unit box,
+# stroke 3.4 and an 8-unit gap so the glyphs stay separate at 16px.
 FAVICON = (
-    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E"
-    "%3Crect width='16' height='16' fill='%23000040'/%3E"
-    "%3Cpath d='M4 3v10M4 8l5-5M4 8l5 5' stroke='%23ccff00' stroke-width='1.6' fill='none'/%3E%3C/svg%3E"
+    "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E"
+    "%3Crect%20width='32'%20height='32'%20fill='%23000040'/%3E"
+    "%3Cg%20stroke='%23ccff00'%20stroke-width='3.4'%20stroke-linecap='round'%20stroke-linejoin='round'%20fill='none'%3E"
+    "%3Cpath%20d='M5.5,7v18M5.5,17.08l5.5,-7.56M5.5,17.08l5.5,7.56'/%3E"
+    "%3Cpath%20d='M19.5,7v18M19.5,17.08l5.5,-7.56M19.5,17.08l5.5,7.56'/%3E"
+    "%3C/g%3E%3C/svg%3E"
 )
 
 
