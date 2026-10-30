@@ -227,7 +227,7 @@
   .verse {
     font-family: var(--verse);
     font-size: clamp(1.0625rem, 1rem + 0.35vw, 1.1875rem);
-    line-height: 1.75;
+    line-height: 1.6;
   }
   .verse p {
     margin: 0 0 1.5em;
