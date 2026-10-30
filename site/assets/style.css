@@ -246,6 +246,24 @@
     padding-bottom: 0.35rem;
   }
 
+  /* Poems that used nested <MENU> as a staircase keep their shape. Depth is a
+     class rather than inline styling, and the step scales with the viewport
+     instead of the fixed 40px of a 1996 <MENU>. */
+  .verse.layout { --step: clamp(0.65rem, 1.05vw + 0.4rem, 2.1rem); }
+  .verse.layout p { margin: 0; }
+  .verse.layout p.brk { margin-top: 1.5em; }
+  .verse.layout p.brk2 { margin-top: 2.7em; }
+  .verse.layout p.d1  { padding-inline-start: calc(var(--step) * 1); }
+  .verse.layout p.d2  { padding-inline-start: calc(var(--step) * 2); }
+  .verse.layout p.d3  { padding-inline-start: calc(var(--step) * 3); }
+  .verse.layout p.d4  { padding-inline-start: calc(var(--step) * 4); }
+  .verse.layout p.d5  { padding-inline-start: calc(var(--step) * 5); }
+  .verse.layout p.d6  { padding-inline-start: calc(var(--step) * 6); }
+  .verse.layout p.d7  { padding-inline-start: calc(var(--step) * 7); }
+  .verse.layout p.d8  { padding-inline-start: calc(var(--step) * 8); }
+  .verse.layout p.d9  { padding-inline-start: calc(var(--step) * 9); }
+  .verse.layout p.d10 { padding-inline-start: calc(var(--step) * 10); }
+
   .prose { max-width: var(--measure); }
   .prose p { margin: 0 0 1.25em; }
 

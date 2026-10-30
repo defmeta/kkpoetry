@@ -503,6 +503,80 @@ def write_fang_specimen(stanza: str) -> None:
 """, encoding="utf-8")
 
 
+def menu_layout(region: str) -> list[tuple[int, str, int]] | None:
+    """
+    Five poems use nested <MENU> as a staircase: each level was another ~40px of
+    left indent (red.witch goes 7 deep). Stripping <MENU> as presentation loses
+    the composition, so the depth is carried out as data instead.
+
+    Returns [(depth, inline html, <br> run that preceded this line)], or None if
+    the poem does not nest.
+    """
+    tokens = re.findall(r"(?is)<!--.*?-->|<[^>]*>|[^<]+", region)
+    depth = 0
+    deepest = 0
+    lines: list[tuple[int, str, int]] = []
+    buf: list[str] = []
+    open_inline: list[str] = []
+    brs = 0
+
+    def flush() -> None:
+        nonlocal buf, brs
+        text = re.sub(r"\s+", " ", "".join(buf)).strip()
+        buf = []
+        if text:
+            for tag in reversed(open_inline):      # close any emphasis that spans lines
+                text += f"</{tag}>"
+            for tag in open_inline:
+                text = f"<{tag}>" + text
+            lines.append((depth, fix_ampersands(text), brs))
+            brs = 0
+
+    for tok in tokens:
+        if tok.startswith("<!--"):
+            continue
+        if tok.startswith("<"):
+            m = re.match(r"(?is)</?\s*([a-z][a-z0-9]*)", tok)
+            name = m.group(1).lower() if m else ""
+            closing = tok.startswith("</")
+            if name == "menu":
+                flush()
+                if closing:
+                    depth = max(0, depth - 1)
+                else:
+                    depth += 1
+                    deepest = max(deepest, depth)
+            elif name == "br":
+                flush()
+                brs += 1
+            elif name in ("i", "b", "em", "strong"):
+                tag = {"i": "em", "em": "em", "b": "strong", "strong": "strong"}[name]
+                if closing and tag in open_inline:
+                    open_inline.remove(tag)
+                elif not closing:
+                    open_inline.append(tag)
+            elif name in ("p", "hr", "center", "blockquote", "body", "html", "head", "pre", "font", "tt"):
+                flush()
+            # any other tag carries no text; drop it
+        else:
+            buf.append(tok)
+    flush()
+
+    return lines if deepest >= 2 else None
+
+
+def layout_html(lines: list[tuple[int, str, int]]) -> str:
+    out = []
+    for depth, text, brs in lines:
+        cls = [f"d{depth}"]
+        if brs >= 4:
+            cls.append("brk2")
+        elif brs >= 2:
+            cls.append("brk")
+        out.append(f'          <p class="{" ".join(cls)}">{text}</p>')
+    return "\n".join(out)
+
+
 # ---------------------------------------------------------------- main
 
 def main() -> int:
@@ -555,6 +629,11 @@ def main() -> int:
         if kind == "pre":
             body = f'        <div class="verse">\n          <pre class="concrete">{payload}</pre>\n        </div>'
             final = words(payload)
+        elif (staircase := menu_layout(region)) is not None:
+            assert words(" ".join(t for _d, t, _b in staircase)) == words(region), \
+                f"{href}: nested layout lost words"
+            body = f'        <div class="verse layout">\n{layout_html(staircase)}\n        </div>'
+            final = words(" ".join(t for _d, t, _b in staircase))
         else:
             assert words("\n".join(payload)) == words(region), f"{href}: text changed"
             body = f'        <div class="verse">\n{verse_html(payload)}\n        </div>'

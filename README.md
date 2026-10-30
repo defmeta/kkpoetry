@@ -32,6 +32,17 @@ serves `placing.html`, and `/placing.html` 308s back to `/placing`.
 Every poem is asserted at build time to be **word-for-word** the original. The
 build fails rather than silently dropping text.
 
+Three conversion paths, chosen per poem:
+
+1. **stanzas** (default) — `<MENU>`/`<BR>` soup becomes one `<p>` per stanza
+2. **concrete** — `<PRE>` pieces keep their text verbatim (bombs, felt, timidity,
+   until 2): the indentation *is* the poem
+3. **staircase** — poems that nested `<MENU>` for layout (red.witch 7 deep,
+   desert 5, stop 4, scream 3, woodstock 3, admonic 2) emit one `<p class="dN">`
+   per line, where `N` is the original nesting depth. CSS turns depth into
+   `padding-inline-start`, so the shape survives at any viewport width instead
+   of the fixed 40px a 1996 `<MENU>` gave.
+
 Two specimen pages exist for typography decisions and are disposable:
 
 - `/type` — fangsong vs serif verse
